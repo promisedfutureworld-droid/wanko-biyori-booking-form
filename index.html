@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>犬のトリミング わんこ日和 ご予約フォーム</title>
+<!--
+  見本③ 犬のトリミング わんこ日和 予約フォーム（LIFF 単一HTML版 / neonbuild-1.0）
+  配信先：Cloudflare Pages（推奨）または GitHub Pages などの無料静的ホスティング
+  バックエンド：GAS Webアプリ（?mode=liff・JSON API専用／HtmlService不使用）
+  ※秘密情報（チャネルアクセストークン・Webhook合言葉等）は一切含みません。
+-->
+<style>
+  :root {
+    --accent: #B87333;
+    --accent-dark: #8A5A24;
+    --accent-soft: #FDF0E0;
+    --green: #06C755;
+    --green-dark: #05A847;
+    --ink: #2B2118;
+    --sub: #6F5F4B;
+    --line: #E7DCCB;
+    --border-input: #B5A48E;
+    --bg: #FFF9F1;
+    --card: #FFFFFF;
+    --ng: #A79E90;
+    --ng-bg: #F4F1EA;
+    --danger: #C0392B;
+    --danger-bg: #FDECEA;
+    --danger-line: #F2B8B0;
+    --sat: #2B6CB0;
+    --sun: #C53030;
+    --focus: #0B57D0;
+    --target-size: 48px;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-padding-top: 16px;
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  p, li {
+    text-wrap: pretty;
+  }
+
+  :where(button, input, textarea):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding:
+      max(14px, env(safe-area-inset-top, 0px))
+      max(14px, env(safe-area-inset-right, 0px))
+      calc(36px + env(safe-area-inset-bottom, 0px))
+      max(14px, env(safe-area-inset-left, 0px));
+  }
+
+  header.top {
+    background: linear-gradient(135deg, #B87333 0%, #9E5E24 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 18px 16px;
+    box-shadow: 0 4px 14px rgba(138, 90, 36, 0.16);
+  }
+
+  .top-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+
+  header.top h1 {
+    font-size: 21px;
+    line-height: 1.3;
+    margin: 0 0 6px;
+  }
+
+  header.top p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.96;
+  }
+
+  /* 通知バナー */
+  .banner {
+    display: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    margin-top: 14px;
+  }
+  .banner.err {
+    display: block;
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-line);
+    font-weight: 600;
+  }
+  .banner.info {
+    display: block;
+    background: #FFF4D6;
+    color: #6B4F00;
+    border: 1px solid #EBD48A;
+  }
+
+  /* 読み込み中・エラー再試行 */
+  #loading {
+    text-align: center;
+    padding: 44px 16px;
+    color: var(--sub);
+  }
+  .spinner {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 12px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  #retryBox {
+    display: none;
+    margin-top: 14px;
+    text-align: center;
+  }
+
+  /* セクションカード */
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 14px;
+    margin-top: 14px;
+    box-shadow: 0 1px 4px rgba(43, 33, 24, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  section.card.missing {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+  }
+
+  section.card h2 {
+    font-size: 17px;
+    line-height: 1.35;
+    margin: 0 0 12px;
+    color: var(--accent-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  section.card h2 .no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    background: var(--accent);
+    color: #FFFFFF;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  fieldset.group {
+    border: 0;
+    margin: 14px 0 0;
+    padding: 0;
+    min-inline-size: 0;
+  }
+  fieldset.group:first-of-type {
+    margin-top: 0;
+  }
+  fieldset.group > legend,
+  label.f {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 14px 0 6px;
+    padding: 0;
+  }
+  fieldset.group > legend {
+    margin-top: 0;
+  }
+  label.f.first {
+    margin-top: 0;
+  }
+
+  .req {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-inline-start: 6px;
+    vertical-align: middle;
+  }
+  .opt {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sub);
+    background: #F3ECE3;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-inline-start: 6px;
+    vertical-align: middle;
+  }
+
+  .note {
+    font-size: 12px;
+    color: var(--sub);
+    margin: 8px 0 0;
+    line-height: 1.5;
+  }
+
+  .field-err {
+    display: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--danger);
+    margin: 6px 0 0;
+  }
+  section.card.missing .field-err.show {
+    display: block;
+  }
+
+  /* カレンダー（7列・月曜はじまり） */
+  .cal-head,
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .cal-head div {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sub);
+    padding: 2px 0 4px;
+  }
+  .cal-head div.sat { color: var(--sat); }
+  .cal-head div.sun { color: var(--sun); }
+
+  .cal-grid button {
+    min-block-size: 54px;
+    border: 1px solid var(--line);
+    background: #FFFFFF;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.25;
+    color: var(--ink);
+    padding: 4px 2px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .cal-grid button .dnum {
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .cal-grid button.sat .dnum { color: var(--sat); }
+  .cal-grid button.sun .dnum { color: var(--sun); }
+  .cal-grid button .mark {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-dark);
+  }
+  .cal-grid button.sel {
+    border: 2px solid var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .cal-grid button:disabled {
+    color: var(--ng);
+    background: var(--ng-bg);
+    border-color: #E7E2D8;
+    cursor: not-allowed;
+  }
+  .cal-grid button:disabled .dnum,
+  .cal-grid button:disabled .mark {
+    color: var(--ng);
+  }
+  .cal-grid .blank {
+    min-block-size: 54px;
+  }
+
+  .selected-slot-bar {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #FAF6F0;
+    font-size: 13px;
+    color: var(--ink);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .selected-slot-bar strong {
+    color: var(--accent-dark);
+  }
+
+  /* 時間・選択タイル共通 */
+  .btns {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .btns.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .btns button {
+    min-block-size: var(--target-size);
+    border: 1px solid var(--line);
+    background: #FFFFFF;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--ink);
+    padding: 8px 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .btns button.sel {
+    border: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+  .btns button:disabled {
+    color: var(--ng);
+    background: var(--ng-bg);
+    border-color: #E7E2D8;
+    cursor: not-allowed;
+  }
+
+  /* コースカード */
+  .course {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-block-size: 58px;
+    text-align: left;
+    border: 1px solid var(--line);
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+  }
+  .course:last-child {
+    margin-bottom: 0;
+  }
+  .course .radio-dot {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    border-radius: 50%;
+    border: 2px solid var(--border-input);
+    background: #FFFFFF;
+    position: relative;
+  }
+  .course.sel {
+    border: 2px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .course.sel .radio-dot {
+    border-color: var(--accent);
+  }
+  .course.sel .radio-dot::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .course .c-body {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  .course .name {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .course .price {
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 3px;
+    line-height: 1.45;
+  }
+
+  /* テキスト入力 */
+  input[type="text"],
+  textarea {
+    width: 100%;
+    min-block-size: var(--target-size);
+    border: 1px solid var(--border-input);
+    border-radius: 10px;
+    padding: 12px;
+    font: inherit;
+    font-size: max(1rem, 16px);
+    background: #FFFFFF;
+    color: var(--ink);
+    appearance: none;
+  }
+  textarea {
+    min-block-size: 76px;
+    resize: vertical;
+  }
+
+  /* チップ（わんちゃん候補・Q4定型） */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .chips button {
+    border: 1px solid var(--accent);
+    color: var(--accent-dark);
+    background: #FFFFFF;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 14px;
+    min-block-size: 44px;
+    cursor: pointer;
+  }
+  .chips button.sel {
+    background: var(--accent);
+    color: #FFFFFF;
+    font-weight: 700;
+  }
+
+  /* カスタム犬種バッジ（過去履歴の自由入力犬種を保持する用） */
+  .custom-q1-box {
+    display: none;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    font-size: 13px;
+    color: var(--accent-dark);
+  }
+
+  /* メインボタン */
+  .submit {
+    width: 100%;
+    min-block-size: 56px;
+    border: none;
+    border-radius: 14px;
+    background: var(--green);
+    color: #FFFFFF;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(6, 199, 85, 0.24);
+  }
+  .submit:active {
+    background: var(--green-dark);
+  }
+  .submit:disabled {
+    background: var(--ng);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .btn-sub {
+    width: 100%;
+    min-block-size: 48px;
+    border: 1px solid var(--border-input);
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ネイティブ確認ダイアログ（bottom sheet スタイル） */
+  dialog.sheet {
+    border: none;
+    padding: 0;
+    margin: auto auto 0 auto;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88dvh;
+    border-radius: 18px 18px 0 0;
+    background: #FFFFFF;
+    color: var(--ink);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.22);
+  }
+  dialog.sheet:modal {
+    overscroll-behavior: contain;
+  }
+  dialog.sheet::backdrop {
+    background: rgba(20, 14, 8, 0.56);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+  .sheet-inner {
+    padding: 18px 16px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .sheet-inner h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: var(--accent-dark);
+  }
+  .sheet-inner table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .sheet-inner td {
+    padding: 7px 4px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .sheet-inner td.k {
+    color: var(--sub);
+    width: 38%;
+    font-size: 13px;
+  }
+  .sheet-inner .go {
+    width: 100%;
+    min-block-size: 54px;
+    border: none;
+    border-radius: 12px;
+    background: var(--green);
+    color: #FFFFFF;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 14px;
+    cursor: pointer;
+  }
+  .sheet-inner .go:disabled {
+    background: var(--ng);
+    cursor: not-allowed;
+  }
+  .sheet-inner .back {
+    width: 100%;
+    min-block-size: 48px;
+    border: 1px solid var(--border-input);
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .sheet-inner .back:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 完了画面 */
+  #doneView {
+    display: none;
+    text-align: center;
+    padding-top: 28px;
+  }
+  .done-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: #E6F8ED;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #doneView h2 {
+    font-size: 21px;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  #doneView p {
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0 0 10px;
+  }
+  .done-summary {
+    text-align: left;
+    background: #FFFFFF;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .done-summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .done-summary div:last-child {
+    border-bottom: none;
+  }
+  .done-summary .dk {
+    color: var(--sub);
+    flex: 0 0 auto;
+  }
+  .done-summary .dv {
+    font-weight: 700;
+    text-align: right;
+  }
+  .done-friend-note {
+    background: #FFF4D6;
+    border: 1px solid #EBD48A;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #6B4F00;
+    text-align: left;
+    margin: 10px 0 6px;
+  }
+
+  @media (pointer: coarse) {
+    :root { --target-size: 50px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap" id="formView">
+  <header class="top">
+    <span class="top-badge">24時間受付・仮予約</span>
+    <h1>トリミング仮予約</h1>
+    <p>犬のトリミング わんこ日和<br>お店の確認後に、確定のご連絡をLINEで送ります。</p>
+  </header>
+
+  <div class="banner" id="banner" aria-live="polite"></div>
+
+  <div id="loading" role="status" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>空き枠を読み込んでいます…</p>
+  </div>
+
+  <div id="retryBox">
+    <button type="button" class="btn-sub" id="retryBtn">もう一度読み込む</button>
+  </div>
+
+  <form id="bookingForm" novalidate style="display:none">
+    <!-- ① 日時 -->
+    <section class="card" id="secDate">
+      <h2 tabindex="-1"><span class="no" aria-hidden="true">1</span>日時を選ぶ</h2>
+      <div class="cal-head" aria-hidden="true">
+        <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div><div class="sun">日</div>
+      </div>
+      <div class="cal-grid" id="calGrid" role="group" aria-label="希望日（14日分）"></div>
+
+      <div id="allFullNote" class="banner info" style="display:none; margin-top:10px"></div>
+
+      <fieldset class="group" id="timeGroup">
+        <legend>時間<span class="req">必須</span></legend>
+        <div class="btns" id="timeBtns"></div>
+      </fieldset>
+
+      <div class="selected-slot-bar" id="selectedSlotBar" aria-live="polite">
+        <span>選択中の日時</span>
+        <strong id="selectedSlotText">まだ選ばれていません</strong>
+      </div>
+      <p class="note" id="todayNote" style="display:none">※当日は、3時間前までの受付です。</p>
+      <p class="field-err" id="errDate">ご希望の日と時間を選んでください。</p>
+    </section>
+
+    <!-- ② コース -->
+    <section class="card" id="secMenu">
+      <h2 tabindex="-1"><span class="no" aria-hidden="true">2</span>コースを選ぶ</h2>
+      <fieldset class="group">
+        <legend class="visually-hidden" style="position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden;">ご希望のコース</legend>
+        <div id="courseList"></div>
+      </fieldset>
+      <p class="note" id="courseReuseNote" style="display:none">前回のコースを選んでいます。ちがうコースにする場合はタップしてください。</p>
+      <p class="note">※料金と時間は目安です。犬種や毛量で変わります。</p>
+      <p class="field-err" id="errMenu">ご希望のコースを選んでください。</p>
+    </section>
+
+    <!-- ③ わんちゃんのこと -->
+    <section class="card" id="secDog">
+      <h2 tabindex="-1"><span class="no" aria-hidden="true">3</span>わんちゃんのこと</h2>
+
+      <div class="chips" id="dogChips" style="display:none" role="group" aria-label="過去にご来店のわんちゃん"></div>
+
+      <label class="f first" for="dogName">わんちゃんのお名前<span class="req">必須</span></label>
+      <input type="text" id="dogName" name="dogName" maxlength="60" placeholder="例：モコ" autocomplete="off" enterkeyhint="next" aria-describedby="reuseNote" required>
+      <p class="note" id="reuseNote" style="display:none">前回と同じ内容を入れています。ちがうところだけ直してください。</p>
+
+      <fieldset class="group">
+        <legend>犬種・大きさ<span class="req">必須</span></legend>
+        <div class="custom-q1-box" id="customQ1Box"></div>
+        <div class="btns two" id="q1Btns"></div>
+        <p class="note" id="q1OtherHint" style="display:none">※具体的な犬種がお決まりでしたら、下の「希望・気をつける点」に書いていただくと助かります。</p>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>年齢<span class="req">必須</span></legend>
+        <div class="btns two" id="q2Btns"></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>1年以内の予防接種（混合ワクチン・狂犬病）<span class="req">必須</span></legend>
+        <div class="btns two" id="q3Btns"></div>
+      </fieldset>
+
+      <label class="f" for="q4">カットの希望・気をつける点<span class="opt">任意</span></label>
+      <div class="chips" id="q4Chips" role="group" aria-label="よく使うメモのボタン"></div>
+      <textarea id="q4" name="q4" maxlength="500" placeholder="特になければ、そのままで大丈夫です"></textarea>
+
+      <p class="field-err" id="errDog">わんちゃんのお名前・犬種・年齢・予防接種を入力してください。</p>
+    </section>
+
+    <!-- ④ 飼い主さんのお名前（電話番号は聞かない仕様） -->
+    <section class="card" id="secName">
+      <h2 tabindex="-1"><span class="no" aria-hidden="true">4</span>飼い主さんのお名前</h2>
+      <label class="f first" for="ownerName">お名前<span class="req">必須</span></label>
+      <input type="text" id="ownerName" name="ownerName" maxlength="60" placeholder="例：山田 花子" autocomplete="name" enterkeyhint="done" aria-describedby="ownerNameNote" required>
+      <p class="note" id="ownerNameNote">LINEのお名前を入れています。ちがう場合は直してください。</p>
+      <p class="field-err" id="errName">飼い主さんのお名前を入力してください。</p>
+    </section>
+
+    <button type="submit" class="submit" id="confirmBtn">内容を確認する</button>
+    <p class="note">画面が開けない時は、トークで「希望日時・お名前・わんちゃんのお名前」を送ってください。お店からご連絡します。</p>
+  </form>
+</main>
+
+<!-- 完了画面 -->
+<main class="wrap" id="doneView" aria-live="polite">
+  <div class="done-icon" aria-hidden="true">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </div>
+  <h2>仮予約を受け付けました</h2>
+  <p>まだ確定ではありません。<br>
+  お店で確認したあと、確定のご連絡をこのLINEで送ります。<br>
+  （営業時間外・定休日の分は、翌営業日のご連絡です）</p>
+
+  <div class="done-summary" id="doneSummary"></div>
+
+  <p id="doneCardMsg">トークにも、ご予約内容のカードを送りました。</p>
+  <p class="note" id="friendNoteSub" style="display:none">※確認メッセージが届かない場合は、お店を友だち追加してご確認ください。</p>
+  <div class="done-friend-note" id="friendNote" style="display:none">
+    ※トークへのカード送信ができませんでした。お店を友だち追加してからトーク画面をご確認ください。
+  </div>
+
+  <button type="button" class="submit" id="closeBtn">トーク画面に戻る（閉じる）</button>
+  <p class="note" id="externalCloseNote" style="display:none">このタブを閉じてLINEにお戻りください。</p>
+</main>
+
+<!-- 送信前の確認ポップアップ（ネイティブ <dialog>） -->
+<dialog id="confirmDialog" class="sheet" closedby="any" aria-labelledby="confirmTitle">
+  <div class="sheet-inner">
+    <h3 id="confirmTitle">この内容で仮予約しますか？</h3>
+    <table id="summaryTable"></table>
+    <p class="note">※この時点では「仮予約」です。お店の確認後に確定のご連絡を送ります。</p>
+    <button type="button" class="go" id="sendBtn" autofocus>これで仮予約する</button>
+    <button type="button" class="back" id="backBtn">直す</button>
+  </div>
+</dialog>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+'use strict';
+
+/* ===== 接続設定（既存資産） ===== */
+var LIFF_ID = '2012732439-SXtlZ2fl';
+var GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzhqA0JiXvR2jITXBPaJF-L5IXf6jLdwTSWr6_SGhB_5JYWrSp2HJxl0sImWA9uL-PxFQ/exec';
+var API_TIMEOUT_MS = 25000;
+
+/* ===== 選択肢定義（messages.md 準拠） ===== */
+var COURSES = [
+  { name: 'シャンプーコース', price: '小型犬 4,400円〜（約90分）／中型犬 6,600円〜（約120分）' },
+  { name: 'シャンプー＆カットコース', price: '小型犬 6,600円〜（約120〜150分）／中型犬 8,800円〜（約150〜180分）' },
+  { name: 'クイックシャンプー（部分ケア）', price: '小型犬 3,300円〜（約60分）／中型犬はお気軽にご相談ください' },
+  { name: '相談して決めたい', price: 'わんちゃんの様子を見て、ぴったりの内容をご提案します' }
+];
+var Q1 = ['トイプードル', 'チワワ', 'ダックスフンド', '柴犬', 'ポメラニアン', 'ミックス犬', 'その他（小型犬）', '中型犬・大型犬'];
+var Q2 = ['1歳未満（子犬）', '1〜6歳（成犬）', '7〜9歳（シニア前期）', '10歳以上（シニア）'];
+var Q3 = ['両方接種済み', 'これから接種予定', '猶予証明書あり', 'わからない・要相談'];
+var Q4_CHIPS = ['いつも通り', 'おまかせ', '短め希望', '皮膚が弱い'];
+
+/* ===== アプリ状態 ===== */
+var state = {
+  idToken: '',
+  accessToken: '',
+  profileName: '',
+  presetCourse: '',
+  availability: null,
+  history: null,
+  date: '',
+  time: '',
+  menu: '',
+  menuManual: false,
+  q1: '',
+  q2: '',
+  q3: '',
+  sending: false,
+  submissionId: ''
+};
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function showBanner(msg, kind) {
+  var b = $('banner');
+  b.textContent = msg;
+  b.className = 'banner ' + (kind || 'err');
+  if (kind === 'err') {
+    b.setAttribute('role', 'alert');
+  } else {
+    b.removeAttribute('role');
+  }
+  b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideBanner() {
+  var b = $('banner');
+  b.className = 'banner';
+  b.textContent = '';
+  b.removeAttribute('role');
+}
+
+function clearSectionError(secId, errId) {
+  $(secId).classList.remove('missing');
+  if (errId) $(errId).classList.remove('show');
+}
+
+function uuid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0;
+    var v = c === 'x' ? r : ((r & 0x3) | 0x8);
+    return v.toString(16);
+  });
+}
+
+/* ===== GAS API 通信（CORS回避のため text/plain + credentials: omit） ===== */
+function api(payload) {
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = controller ? setTimeout(function () { controller.abort(); }, API_TIMEOUT_MS) : null;
+
+  var opts = {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  };
+  if (controller) opts.signal = controller.signal;
+
+  return fetch(GAS_API_URL + '?mode=liff', opts)
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP_' + r.status);
+      return r.json();
+    })
+    .finally(function () {
+      if (timer) clearTimeout(timer);
+    });
+}
+
+function readPresetCourseFromUrl() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var c = params.get('course') || '';
+    var valid = COURSES.some(function (x) { return x.name === c; });
+    return valid ? c : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+/* ===== 初期化 ===== */
+function init() {
+  hideBanner();
+  $('retryBox').style.display = 'none';
+  $('loading').style.display = 'block';
+  $('bookingForm').style.display = 'none';
+  state.submissionId = uuid();
+
+  if (!$('courseList').children.length) {
+    buildStaticButtons();
+    setupDialogBehaviors();
+  }
+
+  if (!LIFF_ID || LIFF_ID === 'YOUR_LIFF_ID') {
+    showBanner('※見本表示です（LIFF IDが未設定のため、仮の空き枠で表示しています）', 'info');
+    applyInit(sampleInit());
+    return;
+  }
+
+  if (typeof liff === 'undefined') {
+    initFailed();
+    return;
+  }
+
+  var isRedirecting = false;
+  liff.init({ liffId: LIFF_ID })
+    .then(function () {
+      state.presetCourse = readPresetCourseFromUrl();
+      if (!liff.isLoggedIn()) {
+        isRedirecting = true;
+        liff.login();
+        return null;
+      }
+      state.idToken = liff.getIDToken() || '';
+      state.accessToken = liff.getAccessToken() || '';
+      if (!state.idToken && !state.accessToken) {
+        throw new Error('NO_TOKEN');
+      }
+      return liff.getProfile().catch(function () { return null; });
+    })
+    .then(function (profile) {
+      if (isRedirecting) return null;
+      if (profile && profile.displayName) {
+        state.profileName = profile.displayName;
+      }
+      return api({
+        action: 'init',
+        idToken: state.idToken,
+        accessToken: state.accessToken
+      });
+    })
+    .then(function (res) {
+      if (isRedirecting) return;
+      if (!res || !res.ok) {
+        initFailed(res && res.error === 'AUTH'
+          ? '画面の有効期限が切れました。一度閉じて、メニューから開き直してください。'
+          : '');
+        return;
+      }
+      applyInit(res);
+    })
+    .catch(function () {
+      if (!isRedirecting) initFailed();
+    });
+}
+
+function initFailed(customMsg) {
+  $('loading').style.display = 'none';
+  $('retryBox').style.display = 'block';
+  showBanner(
+    customMsg || '画面を開けませんでした。LINEアプリから開き直してください。開けない時は、トークで「希望日時・お名前・わんちゃんのお名前」を送ってください。',
+    'err'
+  );
+}
+
+function sampleInit() {
+  var days = [];
+  var times = ['09:30', '10:30', '13:00', '14:30', '16:00'];
+  var wd = ['日', '月', '火', '水', '木', '金', '土'];
+  var today = new Date();
+  for (var i = 0; i < 14; i++) {
+    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    var s = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    var closed = d.getDay() === 2 || (d.getDay() === 3 && Math.ceil(d.getDate() / 7) === 3);
+    var t = {};
+    times.forEach(function (x) { t[x] = !closed && !(i === 1 && x === '10:30'); });
+    days.push({ date: s, weekday: wd[d.getDay()], closed: closed, full: false, times: t });
+  }
+  return { ok: true, availability: { times: times, days: days }, history: { name: '', dogs: [] } };
+}
+
+function applyInit(res) {
+  state.availability = res.availability;
+  state.history = res.history || { name: '', dogs: [] };
+
+  // 飼い主名：台帳履歴を優先し、なければ LINE 表示名
+  var nameInput = $('ownerName');
+  if (state.history.name) {
+    nameInput.value = state.history.name;
+    $('ownerNameNote').textContent = '前回の登録名を入れています。ちがう場合は直してください。';
+  } else {
+    nameInput.value = state.profileName || '';
+    $('ownerNameNote').textContent = 'LINEのお名前を入れています。ちがう場合は直してください。';
+  }
+
+  // URL 引数でコース指定が来ていれば先に選択
+  if (state.presetCourse) {
+    selectCourse(state.presetCourse, true);
+  }
+
+  buildDogChips();
+  renderCalendar();
+
+  // 一番近い空き日を最初から選択
+  var first = findFirstAvailableDay();
+  if (first) {
+    $('allFullNote').style.display = 'none';
+    $('timeGroup').style.display = 'block';
+    selectDate(first.date);
+  } else {
+    state.date = '';
+    state.time = '';
+    $('timeGroup').style.display = 'none';
+    $('todayNote').style.display = 'none';
+    $('allFullNote').textContent = 'ただいま14日先まで空き枠がありません。お手数ですが、トークでご希望の日時を直接お知らせください。';
+    $('allFullNote').style.display = 'block';
+    updateSelectedSlotBar();
+  }
+
+  $('loading').style.display = 'none';
+  $('bookingForm').style.display = 'block';
+}
+
+/* ===== ① 日時（カレンダー＋時間5枠） ===== */
+function findFirstAvailableDay() {
+  if (!state.availability || !state.availability.days) return null;
+  for (var i = 0; i < state.availability.days.length; i++) {
+    var d = state.availability.days[i];
+    if (!d.closed && !d.full) return d;
+  }
+  return null;
+}
+
+function formatDateShort(dateStr, weekday) {
+  var m = Number(dateStr.slice(5, 7));
+  var day = Number(dateStr.slice(8, 10));
+  return m + '/' + day + (weekday ? '（' + weekday + '）' : '');
+}
+
+function renderCalendar() {
+  var grid = $('calGrid');
+  grid.innerHTML = '';
+  var days = state.availability.days || [];
+  if (!days.length) return;
+
+  // 月曜はじまりのオフセット（月=0 ... 日=6）
+  var firstDate = new Date(days[0].date.replace(/-/g, '/') + ' 12:00:00');
+  var lead = (firstDate.getDay() + 6) % 7;
+  for (var i = 0; i < lead; i++) {
+    var sp = document.createElement('div');
+    sp.className = 'blank';
+    sp.setAttribute('aria-hidden', 'true');
+    grid.appendChild(sp);
+  }
+
+  days.forEach(function (d) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    var label = Number(d.date.slice(5, 7)) + '/' + Number(d.date.slice(8, 10));
+    var mark = d.closed ? '休' : (d.full ? '満' : '○');
+    var cls = [];
+    if (d.weekday === '土') cls.push('sat');
+    if (d.weekday === '日') cls.push('sun');
+    if (state.date === d.date && !d.closed && !d.full) cls.push('sel');
+    b.className = cls.join(' ');
+    b.disabled = d.closed || d.full;
+    b.setAttribute('aria-pressed', state.date === d.date ? 'true' : 'false');
+    b.setAttribute('aria-label', label + ' ' + d.weekday + '曜日 ' + (d.closed ? '定休日' : d.full ? '満枠' : '予約可能'));
+
+    var numSpan = document.createElement('span');
+    numSpan.className = 'dnum';
+    numSpan.textContent = label;
+    var markSpan = document.createElement('span');
+    markSpan.className = 'mark';
+    markSpan.textContent = mark;
+    b.appendChild(numSpan);
+    b.appendChild(markSpan);
+
+    b.addEventListener('click', function () {
+      selectDate(d.date);
+    });
+    grid.appendChild(b);
+  });
+}
+
+function selectDate(dateStr) {
+  state.date = dateStr;
+  state.time = '';
+  renderCalendar();
+
+  var day = null;
+  for (var i = 0; i < state.availability.days.length; i++) {
+    if (state.availability.days[i].date === dateStr) {
+      day = state.availability.days[i];
+      break;
+    }
+  }
+
+  var box = $('timeBtns');
+  box.innerHTML = '';
+  state.availability.times.forEach(function (t) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    var ok = !!(day && day.times && day.times[t]);
+    b.textContent = ok ? t : (t + ' ×');
+    b.disabled = !ok;
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', t + (ok ? ' 空きあり' : ' 受付不可'));
+    b.addEventListener('click', function () {
+      state.time = t;
+      Array.prototype.forEach.call(box.children, function (c) {
+        c.classList.remove('sel');
+        c.setAttribute('aria-pressed', 'false');
+      });
+      b.classList.add('sel');
+      b.setAttribute('aria-pressed', 'true');
+      clearSectionError('secDate', 'errDate');
+      updateSelectedSlotBar();
+    });
+    box.appendChild(b);
+  });
+
+  var todayStr = state.availability.days[0].date;
+  $('todayNote').style.display = (dateStr === todayStr) ? 'block' : 'none';
+  updateSelectedSlotBar();
+}
+
+function updateSelectedSlotBar() {
+  var el = $('selectedSlotText');
+  if (!state.date) {
+    el.textContent = 'まだ選ばれていません';
+    return;
+  }
+  var day = null;
+  for (var i = 0; i < state.availability.days.length; i++) {
+    if (state.availability.days[i].date === state.date) {
+      day = state.availability.days[i];
+      break;
+    }
+  }
+  var dateLabel = formatDateShort(state.date, day ? day.weekday : '');
+  el.textContent = state.time ? (dateLabel + ' ' + state.time) : (dateLabel + '（時間を選んでください）');
+}
+
+/* ===== ② コース・③ 事前確認ボタン生成 ===== */
+function buildStaticButtons() {
+  var list = $('courseList');
+  COURSES.forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'course';
+    b.dataset.value = c.name;
+    b.setAttribute('aria-pressed', 'false');
+
+    var dot = document.createElement('span');
+    dot.className = 'radio-dot';
+    dot.setAttribute('aria-hidden', 'true');
+
+    var body = document.createElement('span');
+    body.className = 'c-body';
+    var nm = document.createElement('span');
+    nm.className = 'name';
+    nm.textContent = c.name;
+    var pr = document.createElement('div');
+    pr.className = 'price';
+    pr.textContent = c.price;
+    body.appendChild(nm);
+    body.appendChild(pr);
+
+    b.appendChild(dot);
+    b.appendChild(body);
+    b.addEventListener('click', function () {
+      selectCourse(c.name, true);
+    });
+    list.appendChild(b);
+  });
+
+  buildChoice('q1Btns', Q1, 'q1');
+  buildChoice('q2Btns', Q2, 'q2');
+  buildChoice('q3Btns', Q3, 'q3');
+
+  // Q4 定型チップ（同じ文言の重複挿入を防ぐ）
+  var chips = $('q4Chips');
+  Q4_CHIPS.forEach(function (word) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '＋ ' + word;
+    b.addEventListener('click', function () {
+      var ta = $('q4');
+      var cur = ta.value.trim();
+      if (cur.indexOf(word) !== -1) return;
+      ta.value = cur ? (cur + '、' + word) : word;
+    });
+    chips.appendChild(b);
+  });
+
+  // 入力時にエラー表示を自動で解除
+  $('dogName').addEventListener('input', function () {
+    if ($('dogName').value.trim() && state.q1 && state.q2 && state.q3) {
+      clearSectionError('secDog', 'errDog');
+    }
+  });
+  $('ownerName').addEventListener('input', function () {
+    if ($('ownerName').value.trim()) {
+      clearSectionError('secName', 'errName');
+    }
+  });
+
+  // 日本語IME変換中のEnterで誤送信しない対策
+  ['dogName', 'ownerName'].forEach(function (id) {
+    $(id).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.isComposing) {
+        e.preventDefault();
+      }
+    });
+  });
+}
+
+function selectCourse(courseName, isManual) {
+  var valid = COURSES.some(function (c) { return c.name === courseName; });
+  if (!valid) return;
+  state.menu = courseName;
+  if (isManual) {
+    state.menuManual = true;
+    $('courseReuseNote').style.display = 'none';
+  }
+  var list = $('courseList');
+  Array.prototype.forEach.call(list.children, function (x) {
+    var on = x.dataset.value === courseName;
+    x.classList.toggle('sel', on);
+    x.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  clearSectionError('secMenu', 'errMenu');
+}
+
+function buildChoice(boxId, choices, key) {
+  var box = $(boxId);
+  choices.forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = c;
+    b.dataset.value = c;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () {
+      setChoice(boxId, key, c);
+    });
+    box.appendChild(b);
+  });
+}
+
+function setChoice(boxId, key, value) {
+  state[key] = value || '';
+  var matched = false;
+  Array.prototype.forEach.call($(boxId).children, function (x) {
+    var on = !!value && x.dataset.value === value;
+    if (on) matched = true;
+    x.classList.toggle('sel', on);
+    x.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+
+  if (key === 'q1') {
+    var customBox = $('customQ1Box');
+    if (value && !matched) {
+      // 過去履歴にボタン外の犬種が入っていた場合も消さずに明示表示
+      customBox.textContent = '前回の犬種「' + value + '」が入っています（変える場合は下のボタンをタップしてください）';
+      customBox.style.display = 'block';
+    } else {
+      customBox.style.display = 'none';
+      customBox.textContent = '';
+    }
+    $('q1OtherHint').style.display = (value === 'その他（小型犬）' || value === '中型犬・大型犬') ? 'block' : 'none';
+  }
+
+  if ($('dogName').value.trim() && state.q1 && state.q2 && state.q3) {
+    clearSectionError('secDog', 'errDog');
+  }
+}
+
+/* ===== わんちゃん候補チップ（2回目以降の入力ゼロ化） ===== */
+function buildDogChips() {
+  var dogs = (state.history && state.history.dogs) || [];
+  var box = $('dogChips');
+  box.innerHTML = '';
+  if (!dogs.length) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'flex';
+
+  dogs.forEach(function (dog) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = dog.dogName;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(box.children, function (x) {
+        x.classList.remove('sel');
+        x.setAttribute('aria-pressed', 'false');
+      });
+      b.classList.add('sel');
+      b.setAttribute('aria-pressed', 'true');
+
+      $('dogName').value = dog.dogName;
+      setChoice('q1Btns', 'q1', dog.q1);
+      setChoice('q2Btns', 'q2', dog.q2);
+      setChoice('q3Btns', 'q3', dog.q3);
+      $('reuseNote').style.display = 'block';
+
+      // 手動でまだコースを選んでいない場合は前回のコースも自動反映
+      if (!state.menuManual && dog.menu) {
+        var validCourse = COURSES.some(function (c) { return c.name === dog.menu; });
+        if (validCourse) {
+          selectCourse(dog.menu, false);
+          $('courseReuseNote').style.display = 'block';
+        }
+      }
+    });
+    box.appendChild(b);
+  });
+
+  var add = document.createElement('button');
+  add.type = 'button';
+  add.textContent = '＋ 新しく入力';
+  add.setAttribute('aria-pressed', 'false');
+  add.addEventListener('click', function () {
+    Array.prototype.forEach.call(box.children, function (x) {
+      x.classList.remove('sel');
+      x.setAttribute('aria-pressed', 'false');
+    });
+    add.classList.add('sel');
+    add.setAttribute('aria-pressed', 'true');
+    // 新しいわんちゃん用に前回の名前・Q1〜Q3・再利用注記をすべてクリア
+    $('dogName').value = '';
+    setChoice('q1Btns', 'q1', '');
+    setChoice('q2Btns', 'q2', '');
+    setChoice('q3Btns', 'q3', '');
+    $('reuseNote').style.display = 'none';
+    $('dogName').focus();
+  });
+  box.appendChild(add);
+
+  // 過去のわんちゃんが1頭だけなら最初から自動選択（手入力ゼロ）
+  if (dogs.length === 1) {
+    box.children[0].click();
+  }
+}
+
+/* ===== 確認ダイアログの挙動（modern-web-guidance: native <dialog>） ===== */
+function setupDialogBehaviors() {
+  var dialog = $('confirmDialog');
+
+  // 送信中の Esc / 戻るジェスチャーによる意図しない閉じを防止
+  dialog.addEventListener('cancel', function (e) {
+    if (state.sending) e.preventDefault();
+  });
+
+  dialog.addEventListener('close', function () {
+    dialog.returnValue = '';
+  });
+
+  // Safari など closedby="any" 未対応ブラウザ向けライトディスミスフォールバック
+  if (typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
+    var pressedOutside = false;
+    var isOutside = function (e) {
+      var r = dialog.getBoundingClientRect();
+      return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+    };
+    dialog.addEventListener('pointerdown', function (e) {
+      pressedOutside = !state.sending && isOutside(e);
+    });
+    dialog.addEventListener('pointerup', function (e) {
+      if (pressedOutside && !state.sending && isOutside(e)) {
+        dialog.close();
+      }
+      pressedOutside = false;
+    });
+  }
+}
+
+/* ===== 入力収集・検証・確認表示 ===== */
+function collect() {
+  return {
+    name: $('ownerName').value.trim(),
+    dogName: $('dogName').value.trim(),
+    date: state.date,
+    time: state.time,
+    menu: state.menu,
+    q1: state.q1,
+    q2: state.q2,
+    q3: state.q3,
+    q4: $('q4').value.trim()
+  };
+}
+
+function validate(d) {
+  var miss = [];
+  var firstSection = null;
+  var pairs = [
+    ['secDate', 'errDate'],
+    ['secMenu', 'errMenu'],
+    ['secDog', 'errDog'],
+    ['secName', 'errName']
+  ];
+  pairs.forEach(function (p) { clearSectionError(p[0], p[1]); });
+
+  if (!d.date || !d.time) {
+    miss.push('日時');
+    $('secDate').classList.add('missing');
+    $('errDate').classList.add('show');
+    if (!firstSection) firstSection = $('secDate');
+  }
+  if (!d.menu) {
+    miss.push('コース');
+    $('secMenu').classList.add('missing');
+    $('errMenu').classList.add('show');
+    if (!firstSection) firstSection = $('secMenu');
+  }
+  if (!d.dogName || !d.q1 || !d.q2 || !d.q3) {
+    miss.push('わんちゃんのこと');
+    $('secDog').classList.add('missing');
+    $('errDog').classList.add('show');
+    if (!firstSection) firstSection = $('secDog');
+  }
+  if (!d.name) {
+    miss.push('飼い主さんのお名前');
+    $('secName').classList.add('missing');
+    $('errName').classList.add('show');
+    if (!firstSection) firstSection = $('secName');
+  }
+  return { miss: miss, firstSection: firstSection };
+}
+
+$('bookingForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  hideBanner();
+  var d = collect();
+  var check = validate(d);
+  if (check.miss.length) {
+    showBanner('まだ選んでいないところがあります：' + check.miss.join('、'), 'err');
+    if (check.firstSection) {
+      check.firstSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var h = check.firstSection.querySelector('h2');
+      if (h) h.focus({ preventScroll: true });
+    }
+    return;
+  }
+
+  var rows = [
+    ['日時', d.date + ' ' + d.time],
+    ['コース', d.menu],
+    ['わんちゃん', d.dogName + 'ちゃん'],
+    ['犬種・大きさ', d.q1],
+    ['年齢', d.q2],
+    ['予防接種', d.q3],
+    ['希望・注意点', d.q4 || '特になし'],
+    ['飼い主さま', d.name + 'さま']
+  ];
+  var t = $('summaryTable');
+  t.innerHTML = '';
+  rows.forEach(function (r) {
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td');
+    td1.className = 'k';
+    td1.textContent = r[0];
+    var td2 = document.createElement('td');
+    td2.textContent = r[1];
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    t.appendChild(tr);
+  });
+
+  $('confirmDialog').showModal();
+});
+
+$('backBtn').addEventListener('click', function () {
+  if (!state.sending) $('confirmDialog').close();
+});
+
+/* ===== 送信処理 ===== */
+function showDone(d, pushSent) {
+  $('confirmDialog').close();
+  $('formView').style.display = 'none';
+
+  var box = $('doneSummary');
+  box.innerHTML = '';
+  [
+    ['日時', d.date + ' ' + d.time],
+    ['わんちゃん', d.dogName + 'ちゃん'],
+    ['コース', d.menu]
+  ].forEach(function (pair) {
+    var row = document.createElement('div');
+    var k = document.createElement('span');
+    k.className = 'dk';
+    k.textContent = pair[0];
+    var v = document.createElement('span');
+    v.className = 'dv';
+    v.textContent = pair[1];
+    row.appendChild(k);
+    row.appendChild(v);
+    box.appendChild(row);
+  });
+
+  if (pushSent === false) {
+    $('doneCardMsg').textContent = '仮予約の登録は完了しています。';
+    $('friendNoteSub').style.display = 'none';
+    $('friendNote').style.display = 'block';
+  } else {
+    $('doneCardMsg').textContent = 'トークにも、ご予約内容のカードを送りました。';
+    $('friendNote').style.display = 'none';
+    $('friendNoteSub').style.display = 'block';
+  }
+
+  $('doneView').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+$('sendBtn').addEventListener('click', function () {
+  if (state.sending) return;
+  state.sending = true;
+  var btn = $('sendBtn');
+  var backBtn = $('backBtn');
+  btn.disabled = true;
+  backBtn.disabled = true;
+  btn.textContent = '予約を送っています…そのままお待ちください';
+
+  var d = collect();
+  var payload = {
+    action: 'book',
+    idToken: state.idToken,
+    accessToken: state.accessToken,
+    submissionId: state.submissionId,
+    name: d.name,
+    dogName: d.dogName,
+    date: d.date,
+    time: d.time,
+    menu: d.menu,
+    q1: d.q1,
+    q2: d.q2,
+    q3: d.q3,
+    q4: d.q4
+  };
+
+  var resetBtn = function () {
+    state.sending = false;
+    btn.disabled = false;
+    backBtn.disabled = false;
+    btn.textContent = 'これで仮予約する';
+  };
+
+  if (!LIFF_ID || LIFF_ID === 'YOUR_LIFF_ID') {
+    setTimeout(function () {
+      resetBtn();
+      showDone(d, true);
+    }, 500);
+    return;
+  }
+
+  api(payload)
+    .then(function (res) {
+      resetBtn();
+      if (res && res.ok) {
+        showDone(d, res.pushSent !== false);
+        return;
+      }
+      $('confirmDialog').close();
+
+      if (res && res.error === 'SLOT_TAKEN') {
+        // 入力内容をすべて保持したまま、最新の空き枠だけ反映して選び直させる
+        if (res.availability) state.availability = res.availability;
+        state.time = '';
+        state.submissionId = uuid();
+
+        var curDay = null;
+        for (var i = 0; i < state.availability.days.length; i++) {
+          if (state.availability.days[i].date === state.date) {
+            curDay = state.availability.days[i];
+            break;
+          }
+        }
+        if (curDay && !curDay.closed && !curDay.full) {
+          selectDate(state.date);
+        } else {
+          var nextDay = findFirstAvailableDay();
+          if (nextDay) {
+            selectDate(nextDay.date);
+          } else {
+            state.date = '';
+            renderCalendar();
+            $('timeBtns').innerHTML = '';
+            $('timeGroup').style.display = 'none';
+            $('allFullNote').textContent = 'ただいま14日先まで空き枠がありません。お手数ですが、トークでご希望の日時を直接お知らせください。';
+            $('allFullNote').style.display = 'block';
+            updateSelectedSlotBar();
+          }
+        }
+        $('secDate').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showBanner('その日時は、たった今いっぱいになりました。入力した内容は残っています。別の日時を選んでください。', 'err');
+      } else if (res && res.error === 'AUTH') {
+        showBanner('画面の有効期限が切れました。一度閉じて、メニューから開き直してください。', 'err');
+      } else if (res && res.error === 'BUSY') {
+        showBanner('ただいま予約が混み合っています。入力した内容は残っています。少しおいて、もう一度お試しください。', 'err');
+      } else {
+        showBanner('通信がうまくいきませんでした。入力した内容は残っています。もう一度お試しください。', 'err');
+      }
+    })
+    .catch(function () {
+      resetBtn();
+      $('confirmDialog').close();
+      showBanner('通信がうまくいきませんでした。入力した内容は残っています。もう一度お試しください。', 'err');
+    });
+});
+
+$('retryBtn').addEventListener('click', init);
+
+$('closeBtn').addEventListener('click', function () {
+  if (typeof liff !== 'undefined' && typeof liff.isInClient === 'function' && liff.isInClient()) {
+    liff.closeWindow();
+  } else {
+    $('externalCloseNote').style.display = 'block';
+  }
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
